@@ -33,12 +33,12 @@ curl http://127.0.0.1:1933/health   # {"status":"ok","healthy":true,...}
 3. 召回：
    `POST /api/v1/search/search {"mode":"context","query":"喝茶习惯","session_id":"dsh-e2e-1","max_tokens":800}` → entries 含柠檬偏好
 
-## 2. 插件链路（替换 desktop profile 的官方插件）
+## 2. 插件链路（在 desktop profile 中启用本插件）
 
 1. 备份：`profiles/desktop/package.json`、`cordis.yml`、`cordis.patch.yml`
 2. `dsh plugin --profile desktop add <本仓库绝对路径>`
-3. 编辑 profile `package.json`：bundles 里把 `@openviking/dsh-memory-plugin`
-   替换为 `dsh-ov-memory`（dependencies 同步）
+3. 编辑 profile `package.json`：bundles 加入 `dsh-ov-memory`（dependencies 同步）；
+   若已有占用 `mcp__openviking__*` 命名空间的旧桥接，先从 bundles 移除
 4. 重启 DSH（GUI/桌面），新开会话对话几句
 5. 预期：会话出现在 `viking://user/<u>/sessions/dsh-<session-id>/`；
    OpenViking 记忆注入块出现在步骤上下文（带 `[OpenViking memory recall]` 前缀）；

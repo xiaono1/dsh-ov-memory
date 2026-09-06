@@ -38,8 +38,7 @@ dsh plugin --profile <profile> add /path/to/dsh-ov-memory
 ```
 
 插件通过自带的 `cordis.patch.yml` 注册为一个隔离的 cordis group（服务命名空间 `ovMemory`）。
-
-> 从官方 `@openviking/dsh-memory-plugin` 迁移：请先从 profile 的 bundles 中移除官方插件再添加本插件，两者共用 `mcp__openviking__*` 命名空间，不能同时启用。
+> 若 profile 中已存在其它占用 `mcp__openviking__*` 命名空间的桥接插件，请先移除再启用本插件，两者不能共存。
 
 ## 配置
 
@@ -95,17 +94,6 @@ session/flush      ──► 兜底提交
 ```
 
 设计决策与实现说明见 [docs/DESIGN.md](docs/DESIGN.md)，验证手册见 [docs/E2E.md](docs/E2E.md)。
-
-## 与官方/社区版本的关系
-
-本仓库是对官方 `@openviking/dsh-memory-plugin` 行为规格的**独立 TypeScript 实现**（不含其代码）。
-自动化层（画像/召回/镜像/提交）直连 `/api/v1` REST，模型工具面通过**自研的最小 MCP 栈**
-（stdio 服务器 + streamable-HTTP 上游）打通 `/mcp`。主要差异：
-
-- TypeScript 源码 + 类型化模块划分；入口导出 schemastery `Config`（配置经 cordis 校验）
-- 自研 MCP 协议实现，零运行时 npm 依赖
-- outbox 对「投递成功但清理失败」与「其他插件遗留的异构条目」做了边界处理
-- peer 依赖范围显式包含预发布分支，避免 npm 安装 ERESOLVE
 
 ## 开发
 

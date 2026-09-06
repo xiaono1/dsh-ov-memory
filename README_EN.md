@@ -36,8 +36,7 @@ dsh plugin --profile <profile> add /path/to/dsh-ov-memory
 ```
 
 The bundle registers itself through its own `cordis.patch.yml` as an isolated cordis group (service realm `ovMemory`).
-
-> Migrating from the official `@openviking/dsh-memory-plugin`? Remove it from the profile's bundles first — both publish under the same `mcp__openviking__*` namespace and must not run together.
+> If the profile already runs another bridge that publishes under the `mcp__openviking__*` namespace, remove it first — the two cannot coexist.
 
 ## Configuration
 
@@ -82,15 +81,6 @@ Tools mcp__openviking__* ◄── dsh-mcp-client ◄── stdio ── self-wr
 ```
 
 Design notes: [docs/DESIGN.md](docs/DESIGN.md) · Verification cookbook: [docs/E2E.md](docs/E2E.md)
-
-## Relationship to official/community plugins
-
-An independent TypeScript implementation of the behaviour specified by the official `@openviking/dsh-memory-plugin` (no shared code). The automated layers talk to `/api/v1` REST directly; the model-facing tool surface goes through a self-contained minimal MCP stack (stdio server + streamable-HTTP upstream) to `/mcp`. Notable differences:
-
-- TypeScript source with typed modules; the entry exports a schemastery `Config` validated by cordis
-- Hand-written minimal MCP implementation; zero runtime npm dependencies
-- Outbox handles "delivered but cleanup failed" and foreign queue entries left by other plugins
-- Peer ranges include an explicit prerelease branch, so `npm install` never hits a silent ERESOLVE
 
 ## Development
 

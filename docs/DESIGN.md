@@ -5,10 +5,10 @@
 
 ## 1. 定位与声明
 
-本插件**独立实现**（clean-room 风格）：以 DeepSeek Harness 官方插件
-`@openviking/dsh-memory-plugin` 的行为规格与 volcengine 官方 OpenViking 文档为
-**外部契约**，但代码、模块划分、命名与实现细节均为本项目原创。只对齐"做什么"，
-不复制"怎么写"。
+本插件**独立实现**：以 OpenViking 服务端公开的 API 文档与数据模型（`viking://`
+URI、会话/记忆/资源、两阶段提交与后台抽取等）以及 DeepSeek Harness 的插件接口为
+**外部契约**，代码、模块划分、命名与实现细节均为本项目原创。只对齐"服务端能做什么"，
+不复制"别人怎么写"。
 
 - 语言：**TypeScript**（构建产物 `lib/` 提交仓库，支持免构建安装，同时源码可读）。
 - 运行时：ESM；Node `^22.19 || >=24`（开发机 22.14 仅用于测试，警告可忽略）。
@@ -17,7 +17,7 @@
 - 测试：`node --test`；契约测试用**自建模拟 OpenViking 服务器**；可选 e2e 对
   真实服务器（`OPENVIKING_E2E=1`）。
 
-## 2. 功能规格（与官方对齐的等价面）
+## 2. 功能规格
 
 | 面 | 行为 |
 | --- | --- |
@@ -30,14 +30,14 @@
 | 技能 | 独立 `ctx.skills` provider（isolated，includeDefaultRoots:false）提供 `ov-memory` 技能 |
 | URI 保护 | `tools/pre-execute`：拦截 DSH fs/shell 工具把 `viking://` 当本地路径；引导用 `mcp__openviking__*` |
 | 身份 | 每个会话按工作区 git 身份解析 actor peer（git origin 归一化，回退路径，仓库外不发）；`OPENVIKING_PEER_ID` 固定 |
-| 配置 | schemastery schema；走 profile `cordis.patch.yml`（group isolate 于 `openvikingMemory`） |
+| 配置 | schemastery schema；走 profile `cordis.patch.yml`（group isolate 于 `ovMemory`） |
 | 隔离 | `skipSubagentSessions`（默认 false）、`syncTurns`（默认 true）语义对齐 |
 
 ## 3. 架构决策（自研取舍）
 
 1. **自动化层走 REST，模型层走 MCP**：召回/画像/捕获/提交/pending 全部通过自研
    REST 客户端打 `/api/v1/*`（带 per-session peer 头）；给模型用的完整工具面走
-   MCP 桥。理由同官方：自动层需要进程内逐会话控制，工具面需要服务器全量能力。
+   MCP 桥——自动层需要进程内逐会话控制，工具面需要服务器全量能力。
 2. **代理是"一次进程 per profile"**：MCP 工具调用的 peer 在代理启动时解析
    （进程级），自动层的 peer 逐会话解析。
 3. **最小 MCP 实现（自研）**：
@@ -98,10 +98,10 @@ test/                node:test 单测 + mock server 集成测试（node:http 自
 - README（中/英）+ docs/DESIGN.md + LICENSE(MIT) + CHANGELOG。
 - GitHub Actions：node 22/24 ×（typecheck + build + test）；契约测试 mock server 模式。
 - 发布节奏：tag v0.1.0 → release notes。
-- 真机验证：desktop profile 备份 → 替换官方插件 → 本机 OpenViking 服务器 e2e → 回滚预案。
+- 真机验证：desktop profile 备份 → 安装/启用本插件（先移除既有同名命名空间桥接）→ 本机 OpenViking 服务器 e2e → 回滚预案。
 
 ## 7. 明确不做（v0.1）
 
-- GUI 设置卡片（client-ui）与 `/` 斜杠命令（Rxiain 有，v0.1 不做，避免过度）。
+- GUI 设置卡片（client-ui）与 `/` 斜杠命令（v0.1 不做，避免过度）。
 - 多后端抽象、procedure lane、repo 上下文注入等增强。
 - npm 发布（如需 `pnpm publish` 即可）。
