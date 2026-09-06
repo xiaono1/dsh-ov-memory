@@ -1,0 +1,13 @@
+# dsh-ov-memory profile patch fragment
+#
+# Declares the plugin as a cordis plugin-group whose runtime child carries its
+# own isolated service realm (`ovMemory`), mirroring the shape DSH bundles use.
+- insert:
+    - id: ov-memory
+      name: '@deepseek-ai/cordis-plugin-group'
+      group: true
+      isolate:
+        ovMemory: true
+      config:
+        - id: ov-memory-runtime
+          name: 'dsh-ov-memory'

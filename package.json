@@ -1,0 +1,66 @@
+{
+  "name": "dsh-ov-memory",
+  "version": "0.1.0",
+  "description": "OpenViking memory & context bundle for DeepSeek Harness — original TypeScript implementation (auto-recall, session capture, threshold commit, offline outbox, MCP tool bridge, URI guard).",
+  "type": "module",
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "skills",
+    "cordis.patch.yml",
+    "README.md",
+    "README_EN.md",
+    "docs",
+    "LICENSE"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "clean": "node -e \"require('node:fs').rmSync('lib',{recursive:true,force:true})\"",
+    "check": "npm run typecheck",
+    "test": "npm run build && node --test test/*.test.mjs test/*.test.js",
+    "prepublishOnly": "npm run check && npm test"
+  },
+  "engines": {
+    "node": "^22.19.0 || >=24"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/dsh-llm": ">=0.1.0-rc.6 <0.2.0",
+    "@deepseek-ai/dsh-mcp-client": ">=0.1.0-rc.6 <0.2.0",
+    "@deepseek-ai/dsh-skill-filesystem": ">=0.1.0-rc.6 <0.2.0",
+    "@deepseek-ai/schemastery": ">=3.0.0 <4"
+  },
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "openviking",
+    "memory",
+    "context",
+    "auto-recall",
+    "auto-capture",
+    "plugin"
+  ],
+  "author": "xiaono1",
+  "license": "MIT",
+  "devDependencies": {
+    "@deepseek-ai/dsh-llm": "^0.1.2-rc.1",
+    "@deepseek-ai/dsh-mcp-client": "^0.1.2-rc.1",
+    "@deepseek-ai/dsh-skill-filesystem": "^0.1.2-rc.1",
+    "@deepseek-ai/schemastery": "^3.18.2",
+    "@types/node": "^26.4.1",
+    "typescript": "^7.0.2"
+  }
+}
