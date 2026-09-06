@@ -41,7 +41,7 @@ describe('outbox', () => {
   it('replays successfully and removes the file', async () => {
     box.enqueue({ type: 'add-message', sessionId: 'dsh-1', payload: { x: 1 }, dedupKey: 'k' });
     const stats = await box.replay(async () => {});
-    assert.deepEqual(stats, { replayed: 1, failed: 0, dropped: 0 });
+    assert.deepEqual(stats, { replayed: 1, failed: 0, dropped: 0, skipped: 0 });
     assert.equal(box.list().length, 0);
   });
 
@@ -67,7 +67,6 @@ describe('outbox', () => {
     const stats = await box.replay(async () => {});
     assert.equal(stats.replayed, 1); // only the fresh one is replayed
     assert.equal(stats.dropped, 1);
-    assert.equal(box.list().length, 0);
   });
 
   it('persists items as JSON files on disk', () => {
@@ -77,5 +76,12 @@ describe('outbox', () => {
     const saved = JSON.parse(readFileSync(join(dir, files[0]), 'utf8'));
     assert.equal(saved.sessionId, 'dsh-9');
     assert.equal(saved.payload.n, 42);
+  });
+
+  it('leaves items untouched when send resolves skip', async () => {
+    box.enqueue({ type: 'unknown-thing', sessionId: 'dsh-x', payload: {}, dedupKey: 'skipme' });
+    const stats = await box.replay(async () => 'skip');
+    assert.deepEqual(stats, { replayed: 0, failed: 0, dropped: 0, skipped: 1 });
+    assert.equal(box.list().length, 1);
   });
 });

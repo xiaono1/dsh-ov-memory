@@ -103,12 +103,15 @@ export class Outbox {
   }
 
   /**
-   * Replay queued items. Each item is passed to `send`; on success the file is
-   * removed, on failure the retry counter is bumped (file renamed). Items that
-   * exceeded `maxRetries` or outlived the TTL are dropped.
+   * Replay queued items. Each item is passed to `send`, which may resolve with
+   * `'skip'` to leave the item untouched (unknown envelopes), reject to bump
+   * the retry counter, or resolve to remove the file. Items that exceeded
+   * `maxRetries` or outlived the TTL are dropped.
    */
-  async replay(send: (item: OutboxItem) => Promise<void>): Promise<{ replayed: number; failed: number; dropped: number }> {
-    const stats = { replayed: 0, failed: 0, dropped: 0 };
+  async replay(
+    send: (item: OutboxItem) => Promise<void | 'skip'>,
+  ): Promise<{ replayed: number; failed: number; dropped: number; skipped: number }> {
+    const stats = { replayed: 0, failed: 0, dropped: 0, skipped: 0 };
     const ttlFloor = this.now() - this.ttlMs;
     for (const item of this.list()) {
       if (item.createdAt < ttlFloor || item.retries > this.maxRetries) {
@@ -117,7 +120,11 @@ export class Outbox {
         continue;
       }
       try {
-        await send(item);
+        const outcome = await send(item);
+        if (outcome === 'skip') {
+          stats.skipped += 1;
+          continue;
+        }
         this.remove(item);
         stats.replayed += 1;
       } catch {

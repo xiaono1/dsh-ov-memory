@@ -46,14 +46,16 @@ export declare class Outbox {
     /** All queued items, oldest first. */
     list(): OutboxItem[];
     /**
-     * Replay queued items. Each item is passed to `send`; on success the file is
-     * removed, on failure the retry counter is bumped (file renamed). Items that
-     * exceeded `maxRetries` or outlived the TTL are dropped.
+     * Replay queued items. Each item is passed to `send`, which may resolve with
+     * `'skip'` to leave the item untouched (unknown envelopes), reject to bump
+     * the retry counter, or resolve to remove the file. Items that exceeded
+     * `maxRetries` or outlived the TTL are dropped.
      */
-    replay(send: (item: OutboxItem) => Promise<void>): Promise<{
+    replay(send: (item: OutboxItem) => Promise<void | 'skip'>): Promise<{
         replayed: number;
         failed: number;
         dropped: number;
+        skipped: number;
     }>;
     /** Delete the file behind an item. */
     remove(item: Pick<OutboxItem, 'dedupKey' | 'retries'>): void;

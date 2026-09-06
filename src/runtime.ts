@@ -105,13 +105,17 @@ export class MemoryRuntime {
         if (item.type === 'add-message') {
           const payload = item.payload as { role: 'user' | 'assistant'; content: string; peerId?: string };
           await this.client.addMessage(item.sessionId, payload, payload.peerId || this.actorPeerId);
-        } else {
+        } else if (item.type === 'commit') {
           const payload = item.payload as { keepRecentCount?: number; peerId?: string };
           await this.client.commitSession(
             item.sessionId,
             payload.keepRecentCount ?? this.config.commit.keepRecentCount,
             payload.peerId || this.actorPeerId,
           );
+        } else {
+          // Unknown envelope (e.g. left behind by another plugin): leave it.
+          this.logger.log(`skip outbox item with unknown type: ${item.type}`);
+          return 'skip';
         }
       });
       if (stats.replayed > 0 || stats.failed > 0) {

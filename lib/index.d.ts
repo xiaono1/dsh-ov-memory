@@ -12,6 +12,8 @@
  *  - plus an isolated skill provider and the bridged `mcp__openviking__*` tools
  */
 import type { Logger } from './types.js';
+export { Config } from './config.js';
+export { MCP_SERVER_NAME } from './config.js';
 export declare const name = "ov-memory";
 /** Minimal shape of a cordis context we consume. */
 interface CtxLike {
@@ -23,5 +25,4 @@ interface CtxLike {
     effect(fn: (() => void) | (() => () => void), label?: string): unknown;
 }
 export declare function apply(ctx: CtxLike, input?: unknown): void;
-export {};
 //# sourceMappingURL=index.d.ts.map

@@ -17,7 +17,8 @@ import { createUserMessage } from '@deepseek-ai/dsh-llm';
 import * as mcpClient from '@deepseek-ai/dsh-mcp-client';
 import * as skillFilesystem from '@deepseek-ai/dsh-skill-filesystem';
 
-import { Config, normalizeConfig } from './config.js';
+import { normalizeConfig } from './config.js';
+import type { ResolvedConfig } from './config.js';
 import { resolveEffective } from './settings.js';
 import { OpenVikingClient } from './client/openviking.js';
 import { MemoryRuntime } from './runtime.js';
@@ -26,6 +27,8 @@ import { buildMcpClientConfig } from './mcp/mount.js';
 import { messageToText } from './capture.js';
 import type { Logger } from './types.js';
 
+export { Config } from './config.js';
+export { MCP_SERVER_NAME } from './config.js';
 export const name = 'ov-memory';
 
 interface AgentLike {
@@ -75,7 +78,7 @@ const SKILLS_DIR = fileURLToPath(new URL('../skills', import.meta.url));
 const SKILL_PROVIDER = 'ov-memory';
 
 export function apply(ctx: CtxLike, input: unknown = {}): void {
-  const config = normalizeConfig(input);
+  const config = normalizeConfig(input) as ResolvedConfig;
   const settings = resolveEffective(config);
   const client = new OpenVikingClient(settings);
   const runtime = new MemoryRuntime({
