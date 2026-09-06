@@ -1,6 +1,6 @@
 # dsh-ov-memory — 设计文档
 
-> 将 OpenViking 记忆接入 DeepSeek Harness 的原创 DSH 插件（个人简历项目）。
+> 将 OpenViking 记忆接入 DeepSeek Harness（DSH）的独立实现插件。
 > 仓库：github.com/xiaono1/dsh-ov-memory（公开）
 
 ## 1. 定位与声明

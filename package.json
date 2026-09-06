@@ -1,7 +1,7 @@
 {
   "name": "dsh-ov-memory",
   "version": "0.1.0",
-  "description": "OpenViking memory & context bundle for DeepSeek Harness — original TypeScript implementation (auto-recall, session capture, threshold commit, offline outbox, MCP tool bridge, URI guard).",
+  "description": "OpenViking memory & context bundle for DeepSeek Harness: auto-recall, session capture, threshold commit, offline outbox replay, self-contained MCP tool bridge, viking:// URI guard.",
   "type": "module",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
@@ -38,14 +38,15 @@
     "node": "^22.19.0 || >=24"
   },
   "peerDependencies": {
-    "@deepseek-ai/dsh-llm": ">=0.1.0-rc.6 <0.2.0",
-    "@deepseek-ai/dsh-mcp-client": ">=0.1.0-rc.6 <0.2.0",
-    "@deepseek-ai/dsh-skill-filesystem": ">=0.1.0-rc.6 <0.2.0",
+    "@deepseek-ai/dsh-llm": ">=0.0.1-rc.1 <0.1.0 || >=0.1.0-rc.1 <0.2.0-0",
+    "@deepseek-ai/dsh-mcp-client": ">=0.0.1-rc.1 <0.1.0 || >=0.1.0-rc.1 <0.2.0-0",
+    "@deepseek-ai/dsh-skill-filesystem": ">=0.0.1-rc.1 <0.1.0 || >=0.1.0-rc.1 <0.2.0-0",
     "@deepseek-ai/schemastery": ">=3.0.0 <4"
   },
   "keywords": [
     "deepseek-harness",
     "dsh",
+    "dsh-plugin",
     "openviking",
     "memory",
     "context",
