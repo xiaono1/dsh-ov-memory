@@ -125,13 +125,23 @@ export class Outbox {
           stats.skipped += 1;
           continue;
         }
-        this.remove(item);
+        try {
+          this.remove(item);
+        } catch {
+          // Best-effort cleanup: an undeliverable removal (locked file, unusual
+          // permissions) must not be mistaken for a failed send — the payload
+          // was already delivered, so re-queueing it would duplicate it.
+        }
         stats.replayed += 1;
       } catch {
         const current = this.fileFor(item);
         item.retries += 1;
         if (item.retries > this.maxRetries) {
-          this.remove({ ...item, retries: item.retries - 1 } as OutboxItem);
+          try {
+            this.remove({ ...item, retries: item.retries - 1 } as OutboxItem);
+          } catch {
+            /* best-effort drop */
+          }
           stats.dropped += 1;
         } else if (existsSync(current)) {
           // Rewrite under the next retry slot (filename and content agree).
