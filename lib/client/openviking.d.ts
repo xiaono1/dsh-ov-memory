@@ -65,6 +65,27 @@ export interface ContextSearchInput {
     peerScope?: 'actor' | 'all';
     excludeUris?: string[];
 }
+/** One ranked hit from `POST /api/v1/search/find`. */
+export interface FindItem {
+    uri: string;
+    title?: string;
+    category?: string;
+    score?: number;
+}
+export interface FindResult {
+    memories: FindItem[];
+    resources: FindItem[];
+    skills: FindItem[];
+    total?: number;
+}
+/** `POST /api/v1/content/write` result (fields vary by server version). */
+export interface WriteContentResult {
+    uri?: string;
+    mode?: string;
+    written_bytes?: number;
+    semantic_updated?: boolean;
+    vector_updated?: boolean;
+}
 export declare class OpenVikingClient {
     private readonly settings;
     private readonly fetchImpl;
@@ -101,6 +122,22 @@ export declare class OpenVikingClient {
         isDir: boolean;
         uri: string;
     }>>;
+    /** POST /api/v1/search/find — raw ranked hits, no context assembly. */
+    find(input: {
+        query: string;
+        targetUri?: string;
+        limit?: number;
+        scoreThreshold?: number;
+    }, actorPeerId?: string): Promise<FindResult>;
+    /**
+     * POST /api/v1/content/write — replace or append text to an existing
+     * viking:// file. The server re-embeds the file and refreshes the containing
+     * directory; it cannot create new memory files (those come from commits).
+     */
+    writeContent(uri: string, content: string, options?: {
+        mode?: 'replace' | 'append';
+        wait?: boolean;
+    }, actorPeerId?: string): Promise<WriteContentResult>;
     /** Re-export for outbox replay classification. */
     isRetryable(err: unknown): boolean;
 }

@@ -15,12 +15,12 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, w
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 
-export type OutboxItemType = 'add-message' | 'commit';
+export type OutboxItemType = 'add-message' | 'commit' | 'learn-append';
 
 export interface OutboxItem<T = unknown> {
   type: OutboxItemType;
-  /** OpenViking session id (`dsh-<session-id>`). */
-  sessionId: string;
+  /** OpenViking session id (`dsh-<session-id>`); user-scoped writes omit it. */
+  sessionId?: string;
   /** Wire payload for the corresponding REST call. */
   payload: T;
   createdAt: number;

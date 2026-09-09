@@ -48,6 +48,11 @@ export const Config = z.object({
     keepRecentCount: z.number().min(0).max(1000).default(10),
     teardown: z.boolean().default(true),
   }),
+
+  learn: z.object({
+    /** Minimum semantic score for an existing memory to merge a lesson into. */
+    minScore: z.number().min(0).max(1).default(0.5),
+  }),
 });
 
 type ConfigShape = {
@@ -73,6 +78,7 @@ type ConfigShape = {
     keepRecentCount?: number;
     teardown?: boolean;
   };
+  learn?: { minScore?: number };
 };
 
 /** Everything the plugin reads after normalization. */
@@ -95,6 +101,7 @@ export interface ResolvedConfig {
   };
   capture: { toolResults: boolean; skipSubagentSessions: boolean; syncTurns: boolean };
   commit: { enabled: boolean; thresholdTokens: number; keepRecentCount: number; teardown: boolean };
+  learn: { minScore: number };
 }
 
 export function normalizeConfig(input: unknown): ResolvedConfig {
@@ -128,6 +135,9 @@ export function normalizeConfig(input: unknown): ResolvedConfig {
       thresholdTokens: raw.commit?.thresholdTokens ?? 20000,
       keepRecentCount: raw.commit?.keepRecentCount ?? 10,
       teardown: raw.commit?.teardown ?? true,
+    },
+    learn: {
+      minScore: raw.learn?.minScore ?? 0.5,
     },
   };
 }

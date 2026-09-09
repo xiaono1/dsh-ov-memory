@@ -58,6 +58,13 @@ export declare const Config: z<Schemastery.ObjectS<{
         keepRecentCount: z<number, number>;
         teardown: z<boolean, boolean>;
     }>>;
+    learn: z<Schemastery.ObjectS<{
+        /** Minimum semantic score for an existing memory to merge a lesson into. */
+        minScore: z<number, number>;
+    }>, Schemastery.ObjectT<{
+        /** Minimum semantic score for an existing memory to merge a lesson into. */
+        minScore: z<number, number>;
+    }>>;
 }>, Schemastery.ObjectT<{
     endpoint: z<string, string>;
     apiKey: z<string, string>;
@@ -105,6 +112,13 @@ export declare const Config: z<Schemastery.ObjectS<{
         keepRecentCount: z<number, number>;
         teardown: z<boolean, boolean>;
     }>>;
+    learn: z<Schemastery.ObjectS<{
+        /** Minimum semantic score for an existing memory to merge a lesson into. */
+        minScore: z<number, number>;
+    }>, Schemastery.ObjectT<{
+        /** Minimum semantic score for an existing memory to merge a lesson into. */
+        minScore: z<number, number>;
+    }>>;
 }>>;
 /** Everything the plugin reads after normalization. */
 export interface ResolvedConfig {
@@ -137,6 +151,9 @@ export interface ResolvedConfig {
         thresholdTokens: number;
         keepRecentCount: number;
         teardown: boolean;
+    };
+    learn: {
+        minScore: number;
     };
 }
 export declare function normalizeConfig(input: unknown): ResolvedConfig;

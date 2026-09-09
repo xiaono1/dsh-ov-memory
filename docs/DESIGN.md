@@ -64,6 +64,8 @@ src/
     sessions.ts      ensure/get/messages/commit/pending_tokens/tasks 轮询
     recall.ts        search(context/list)、find、read/list/tree/grep/glob 封装
   recall.ts          pre-step 召回编排：budget、去重、注入块组装
+  learn.ts           /memlearn 域逻辑：脱敏、语义查重合并（search/find + content/write append）
+  commands.ts        /memlearn 斜杠命令注册（可选能力注入，零依赖；recordInput=false）
   profile.ts         session-start 画像/索引注入
   capture.ts         session/event → 会话流消息模型（含 tool 结果、剥离注入块）
   commit.ts          turn/end 阈值判定 + commit；teardown 兜底

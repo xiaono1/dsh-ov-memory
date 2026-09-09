@@ -17,6 +17,8 @@ import type { SessionLike } from './session.js';
 import { captureEvent } from './capture.js';
 import type { CapturedMessage, EventLike } from './capture.js';
 import { buildProfileText, buildRecallText } from './recall.js';
+import { learnLesson, prepareLesson } from './learn.js';
+import type { LearnResult } from './learn.js';
 
 export interface RuntimeOptions {
   config: ResolvedConfig;
@@ -102,18 +104,31 @@ export class MemoryRuntime {
   async replayOutbox(): Promise<void> {
     try {
       const stats = await this.outbox.replay(async (item) => {
-        if (item.type === 'add-message') {
+        if (item.type === 'add-message' && item.sessionId) {
           const payload = item.payload as { role: 'user' | 'assistant'; content: string; peerId?: string };
           await this.client.addMessage(item.sessionId, payload, payload.peerId || this.actorPeerId);
-        } else if (item.type === 'commit') {
+        } else if (item.type === 'commit' && item.sessionId) {
           const payload = item.payload as { keepRecentCount?: number; peerId?: string };
           await this.client.commitSession(
             item.sessionId,
             payload.keepRecentCount ?? this.config.commit.keepRecentCount,
             payload.peerId || this.actorPeerId,
           );
+        } else if (item.type === 'learn-append') {
+          const payload = item.payload as { content: string; peerId?: string };
+          const attempt = await learnLesson(this.client, {
+            lesson: payload.content,
+            minScore: this.config.learn.minScore,
+            actorPeerId: payload.peerId || this.actorPeerId,
+          });
+          if (attempt.action === 'no-match') {
+            // The merge target is resolved at replay time; if no memory is
+            // close enough by then, drop the lesson rather than retry forever.
+            this.logger.warn(`queued lesson found no merge target at replay: ${attempt.message}`);
+          }
         } else {
-          // Unknown envelope (e.g. left behind by another plugin): leave it.
+          // Unknown or corrupt envelope (e.g. left behind by another plugin):
+          // leave it.
           this.logger.log(`skip outbox item with unknown type: ${item.type}`);
           return 'skip';
         }
@@ -268,6 +283,39 @@ export class MemoryRuntime {
       } else {
         this.logger.warn(`flush commit failed: ${(err as Error).message}`);
       }
+    }
+  }
+
+  /**
+   * Persist a human-supplied lesson (`/memlearn`): redact, then merge into the
+   * closest existing memory. Retryable failures (server unreachable) queue to
+   * the outbox instead of throwing, so the command works offline.
+   */
+  async learn(memory: string): Promise<LearnResult> {
+    const prepared = prepareLesson(memory);
+    try {
+      const attempt = await learnLesson(this.client, {
+        lesson: prepared.text,
+        minScore: this.config.learn.minScore,
+        actorPeerId: this.actorPeerId,
+      });
+      return { ...attempt, redacted: prepared.redacted };
+    } catch (err) {
+      if (this.client.isRetryable(err)) {
+        this.outbox.enqueue({
+          type: 'learn-append',
+          payload: { content: prepared.text, peerId: this.actorPeerId },
+          dedupKey: `learn|${hashText(prepared.text)}`,
+        });
+        this.logger.log('learn queued to outbox');
+        return {
+          action: 'queued',
+          uri: '',
+          redacted: prepared.redacted,
+          message: 'OpenViking is unreachable — the lesson was queued locally.',
+        };
+      }
+      throw err;
     }
   }
 

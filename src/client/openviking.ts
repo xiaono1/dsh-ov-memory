@@ -68,6 +68,30 @@ export interface ContextSearchInput {
   excludeUris?: string[];
 }
 
+/** One ranked hit from `POST /api/v1/search/find`. */
+export interface FindItem {
+  uri: string;
+  title?: string;
+  category?: string;
+  score?: number;
+}
+
+export interface FindResult {
+  memories: FindItem[];
+  resources: FindItem[];
+  skills: FindItem[];
+  total?: number;
+}
+
+/** `POST /api/v1/content/write` result (fields vary by server version). */
+export interface WriteContentResult {
+  uri?: string;
+  mode?: string;
+  written_bytes?: number;
+  semantic_updated?: boolean;
+  vector_updated?: boolean;
+}
+
 export class OpenVikingClient {
   constructor(
     private readonly settings: EffectiveSettings,
@@ -235,6 +259,54 @@ export class OpenVikingClient {
       baseUrl: this.base,
       path: '/api/v1/fs/ls',
       query: { uri, node_limit: nodeLimit },
+      timeoutMs: this.timeoutMs,
+      fetchImpl: this.fetchImpl,
+      auth: this.auth(),
+      identity: this.identity(actorPeerId),
+    });
+  }
+
+  /** POST /api/v1/search/find — raw ranked hits, no context assembly. */
+  async find(
+    input: { query: string; targetUri?: string; limit?: number; scoreThreshold?: number },
+    actorPeerId?: string,
+  ): Promise<FindResult> {
+    const body: Record<string, unknown> = { query: input.query, limit: input.limit ?? 10 };
+    if (input.targetUri !== undefined) body.target_uri = input.targetUri;
+    if (input.scoreThreshold !== undefined) body.score_threshold = input.scoreThreshold;
+    return requestJson<FindResult>({
+      baseUrl: this.base,
+      path: '/api/v1/search/find',
+      method: 'POST',
+      body,
+      timeoutMs: this.timeoutMs,
+      fetchImpl: this.fetchImpl,
+      auth: this.auth(),
+      identity: this.identity(actorPeerId),
+    });
+  }
+
+  /**
+   * POST /api/v1/content/write — replace or append text to an existing
+   * viking:// file. The server re-embeds the file and refreshes the containing
+   * directory; it cannot create new memory files (those come from commits).
+   */
+  async writeContent(
+    uri: string,
+    content: string,
+    options: { mode?: 'replace' | 'append'; wait?: boolean } = {},
+    actorPeerId?: string,
+  ): Promise<WriteContentResult> {
+    return requestJson<WriteContentResult>({
+      baseUrl: this.base,
+      path: '/api/v1/content/write',
+      method: 'POST',
+      body: {
+        uri,
+        content,
+        mode: options.mode ?? 'replace',
+        wait: options.wait ?? false,
+      },
       timeoutMs: this.timeoutMs,
       fetchImpl: this.fetchImpl,
       auth: this.auth(),

@@ -11,6 +11,7 @@ import { OpenVikingClient } from './client/openviking.js';
 import type { CommitResult } from './client/openviking.js';
 import type { SessionLike } from './session.js';
 import type { CapturedMessage, EventLike } from './capture.js';
+import type { LearnResult } from './learn.js';
 export interface RuntimeOptions {
     config: ResolvedConfig;
     settings: EffectiveSettings;
@@ -73,6 +74,12 @@ export declare class MemoryRuntime {
     maybeCommit(session: SessionLike): Promise<CommitResult | null>;
     /** Final commit at session flush / teardown (server skips when idle). */
     flushCommit(session: SessionLike): Promise<void>;
+    /**
+     * Persist a human-supplied lesson (`/memlearn`): redact, then merge into the
+     * closest existing memory. Retryable failures (server unreachable) queue to
+     * the outbox instead of throwing, so the command works offline.
+     */
+    learn(memory: string): Promise<LearnResult>;
     private commitOnce;
     dispose(): void;
 }

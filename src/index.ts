@@ -9,6 +9,7 @@
  *  - `session/event` turn-end → threshold commit (pending_tokens)
  *  - `session/flush`        → final commit at session teardown
  *  - `tools/pre-execute`    → keep local tools away from viking:// URIs
+ *  - `/memlearn` command    → human lesson channel (redact + merge, no model turn)
  *  - plus an isolated skill provider and the bridged `mcp__openviking__*` tools
  */
 
@@ -25,6 +26,7 @@ import { MemoryRuntime } from './runtime.js';
 import { guardVikingUri } from './guard.js';
 import { buildMcpClientConfig } from './mcp/mount.js';
 import { messageToText } from './capture.js';
+import { registerMemlearnCommand } from './commands.js';
 import type { Logger } from './types.js';
 
 export { Config } from './config.js';
@@ -54,6 +56,8 @@ interface CtxLike {
   plugin(plugin: unknown, config?: unknown): unknown;
   on(event: string, listener: (...args: any[]) => unknown, options?: { prepend?: boolean }): unknown;
   effect(fn: (() => void) | (() => () => void), label?: string): unknown;
+  /** Optional cordis service injection (used for the command registry). */
+  inject?: (services: string[], callback: (scoped: any) => void) => void;
 }
 
 function sessionIdOf(agent: AgentLike | undefined): string | undefined {
@@ -99,6 +103,10 @@ export function apply(ctx: CtxLike, input: unknown = {}): void {
   } catch (err) {
     ctx.logger.warn(`[ov-memory] skill provider failed: ${(err as Error).message}`);
   }
+
+  // `/memlearn <lesson>`: human lesson channel — no model turn, raw input is
+  // never recorded, offline writes queue through the outbox.
+  registerMemlearnCommand(ctx, { learn: (lesson) => runtime.learn(lesson) });
 
   // Session-start: ensure the mirror session, replay the outbox, inject profile.
   ctx.on('agent/session-start', async (payload: { agent?: AgentLike; source?: string }) => {

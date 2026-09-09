@@ -16,6 +16,7 @@ OpenViking 负责「记住」，本插件负责把记忆在合适的时候送进
 - **会话镜像** —— 把 user / assistant（可选 tool 结果）消息实时写入 OpenViking 的 `dsh-<会话id>` 会话流，供后台抽取为长期记忆
 - **阈值提交** —— 服务端 `pending_tokens` 达到阈值自动 commit（保留最近 N 条为活跃消息）；会话关闭时兜底提交
 - **离线出站队列（outbox）** —— OpenViking 不可达时写操作落盘持久化，下次会话启动时幂等重放（内容哈希去重、重试上限、TTL 清理）
+- **`/memlearn` 人工沉淀** —— 斜杠命令直接把一条经验写入长期记忆：不开启模型回合、原文不进会话日志；密钥先脱敏，再语义查重合并进最相近的已有记忆（OpenViking 无新建记忆文件 API，低于分数下限时诚实拒绝写入）；离线时自动进 outbox，恢复后重放
 - **完整工具面** —— 自研最小 MCP 实现（stdio 服务器 + streamable-HTTP 上游，无第三方 MCP SDK），把服务器全部工具以 `mcp__openviking__*` 暴露；服务器工具表变化自动同步
 - **viking:// URI 守卫** —— 拦截本地 fs/shell 工具把 `viking://` 虚拟路径当成本地文件
 - **自带技能** —— 独立 skill provider 提供 `ov-memory` 使用指南，不污染默认技能目录
@@ -67,6 +68,8 @@ dsh plugin --profile <profile> add /path/to/dsh-ov-memory
             commit:
               thresholdTokens: 20000  # pending_tokens 达到即提交
               keepRecentCount: 10     # 提交后保留为活跃的最近消息数
+            learn:
+              minScore: 0.5           # /memlearn 合并进已有记忆的语义分下限
 ```
 
 常用环境变量：
@@ -90,6 +93,7 @@ agent/pre-step     ──► 召回注入（plugin user 消息）──► POST 
 session/event      ──► 会话镜像 ──服务器不可达──► outbox(本地持久化) ──重放──► POST .../messages
 turn/end           ──► pending_tokens ≥ 阈值 → commit
 session/flush      ──► 兜底提交
+/memlearn 命令     ──► 脱敏 → 语义查重 → append（离线进 outbox）──► POST /api/v1/search/find → POST /api/v1/content/write
 工具面 mcp__openviking__* ◄── dsh-mcp-client ◄── stdio ── 自研 MCP 代理 ──► POST /mcp (streamable HTTP)
 ```
 
@@ -105,7 +109,7 @@ npm test            # node --test（内置 mock OpenViking 服务器，无需真
 ```
 
 测试不依赖真实服务器：`test/*.test.mjs` 用自建 `node:http` 模拟 OpenViking REST 与 MCP 端点，
-覆盖捕获/提交/outbox/凭据链/peer 解析/MCP 会话与工具调用/URI 守卫等路径。
+覆盖捕获/提交/outbox/凭据链/peer 解析/MCP 会话与工具调用/URI 守卫/`/memlearn`（脱敏、查重合并、离线入队与重放）等路径。
 
 可选真实服务器端到端验证见 [docs/E2E.md](docs/E2E.md)。
 

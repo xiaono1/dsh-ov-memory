@@ -14,6 +14,7 @@ Persistent memory for [DeepSeek Harness](https://deepseek-harness.github.io/deep
 - **Session mirroring** — streams user/assistant messages (optionally tool results) into an `dsh-<session-id>` OpenViking session in real time for background extraction.
 - **Threshold commits** — commits when the server reports `pending_tokens >= threshold` (keeping the newest N messages live), with a teardown commit at session flush.
 - **Offline-first outbox** — writes that fail while the server is unreachable are persisted locally and replayed idempotently at the next session start (content-hash dedupe, retry cap, TTL pruning).
+- **`/memlearn` human channel** — a slash command persists a lesson straight into long-term memory: no model turn, and the raw input never enters the session log. Secrets are redacted first, then the lesson is merged into the closest existing memory (OpenViking has no create-memory endpoint, so a below-floor match is an honest refusal); offline writes queue through the outbox and replay later.
 - **Full tool surface** — a self-contained minimal MCP implementation (stdio server + streamable-HTTP upstream, no third-party MCP SDK) exposes every server tool as `mcp__openviking__*`, re-syncing when the server's tool list changes.
 - **viking:// URI guard** — keeps local fs/shell tools from treating `viking://` virtual paths as local files.
 - **Bundled skill** — ships an `ov-memory` skill through an isolated skill provider, without shadowing the default skill roots.
@@ -63,6 +64,8 @@ Defaults point at `http://127.0.0.1:1933`. Credentials follow the standard OpenV
             commit:
               thresholdTokens: 20000
               keepRecentCount: 10
+            learn:
+              minScore: 0.5           # semantic floor for /memlearn merges
 ```
 
 Common environment variables: `OPENVIKING_URL`, `OPENVIKING_BASE_URL`, `OPENVIKING_API_KEY`, `OPENVIKING_BEARER_TOKEN`, `OPENVIKING_ACCOUNT`, `OPENVIKING_USER`, `OPENVIKING_PEER_ID`, `OPENVIKING_MCP_URL`, `OPENVIKING_PENDING_DIR`.
@@ -77,6 +80,7 @@ agent/pre-step     ──► recall injection (plugin user msg) ─► POST /api
 session/event      ──► mirror messages ──unreachable──► outbox (persisted) ─replay──► POST .../messages
 turn/end           ──► pending_tokens >= threshold → commit
 session/flush      ──► teardown commit
+/memlearn command  ──► redact → semantic dedupe → append (offline: outbox) ──► POST /api/v1/search/find → POST /api/v1/content/write
 Tools mcp__openviking__* ◄── dsh-mcp-client ◄── stdio ── self-written MCP proxy ──► POST /mcp (streamable HTTP)
 ```
 
@@ -91,7 +95,7 @@ npm run build       # TypeScript → lib/ (committed)
 npm test            # node --test against built-in mock OpenViking servers
 ```
 
-Tests need no real server: `test/*.test.mjs` spins up in-process `node:http` mocks of the OpenViking REST and MCP endpoints and covers capture, commits, outbox, credential resolution, peer parsing, MCP session/tool calls, and the URI guard.
+Tests need no real server: `test/*.test.mjs` spins up in-process `node:http` mocks of the OpenViking REST and MCP endpoints and covers capture, commits, outbox, credential resolution, peer parsing, MCP session/tool calls, the URI guard, and `/memlearn` (redaction, dedupe-merge, offline queue and replay).
 
 ## License
 

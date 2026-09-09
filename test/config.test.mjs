@@ -14,6 +14,7 @@ describe('config normalizeConfig', () => {
     assert.equal(cfg.commit.keepRecentCount, 10);
     assert.equal(cfg.capture.toolResults, false);
     assert.equal(cfg.capture.syncTurns, true);
+    assert.equal(cfg.learn.minScore, 0.5);
   });
 
   it('honours explicit values and nested sections', () => {
@@ -23,6 +24,7 @@ describe('config normalizeConfig', () => {
       account: 'acct',
       recall: { budgetTokens: 500, scoreFloor: 0.1 },
       commit: { thresholdTokens: 12000 },
+      learn: { minScore: 0.8 },
     });
     assert.equal(cfg.endpoint, 'http://localhost:9999');
     assert.equal(cfg.apiKey, 'k');
@@ -31,6 +33,7 @@ describe('config normalizeConfig', () => {
     assert.equal(cfg.recall.scoreFloor, 0.1);
     assert.equal(cfg.recall.enabled, true); // sibling default preserved
     assert.equal(cfg.commit.thresholdTokens, 12000);
+    assert.equal(cfg.learn.minScore, 0.8);
   });
 
   it('strips trailing slashes from endpoint', () => {
